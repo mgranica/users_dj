@@ -33,4 +33,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.name + ' ' + self.last_names
 
     def __str__(self):
-        return self # TODO
+        return self.name + ' ' + self.last_names

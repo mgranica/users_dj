@@ -36,3 +36,9 @@ class UserRegisterForm(forms.ModelForm):
             'last_names',
             'gender'
         )
+
+    def clean_password2(self):
+        if self.cleaned_data['password1'] != self.cleaned_data['password2']:
+            self.add_error('password2', 'the password do not match')
+        elif len(self.cleaned_data['password1']) < 5:
+            self.add_error('password2', 'the password needs to have more than 5 characters')
