@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.core.mail import send_mail
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
@@ -16,9 +17,11 @@ from django.views.generic.edit import (
 from .forms import (
     UserRegisterForm, 
     LoginForm, 
-    UpdatePasswordForm
+    UpdatePasswordForm,
+    VerificationForm,
 )
 from .models import User
+from .functions import code_generator
 
 # Create your views here.
 
@@ -28,15 +31,28 @@ class UserRegisterView(FormView):
     success_url = '/'
 
     def form_valid(self, form):
-        User.objects.create_user(
+        code = code_generator()
+        user = User.objects.create_user(
             form.cleaned_data['username'],
             form.cleaned_data['email'],
             form.cleaned_data['password1'],
             name=form.cleaned_data['name'],
             last_names=form.cleaned_data['last_names'],
-            gender=form.cleaned_data['gender']
+            gender=form.cleaned_data['gender'],
+            register_code= code
         )
-        return super(UserRegisterView, self).form_valid(form)
+        # send mail with the code
+        subject = 'mail confirmation'
+        message = 'Verification code: ' + code
+        sender_email = 'migue.granica@gmail.com'
+
+        send_mail(subject, message, sender_email, [form.cleaned_data['email'],])
+        # redirect to validation screen
+        return HttpResponseRedirect(
+            reverse(
+                'users_app:user-verification'
+            )
+        )
 
 class LoginUser(FormView):
     template_name = 'users/login.html'
@@ -44,7 +60,7 @@ class LoginUser(FormView):
     success_url = reverse_lazy('home_app:panel')
 
     def form_valid(self, form):
-        user = authenticate(
+        user_item = authenticate(
             username=form.cleaned_data['username'],
             password=form.cleaned_data['password1']
         )
@@ -56,7 +72,8 @@ class LogoutView(View):
         logout(request)
         return HttpResponseRedirect(
             reverse(
-                'users_app:user-login'
+                'users_app:user-login',
+                kwargs={'pk': user_item.id}
             )
         )
 
@@ -80,3 +97,23 @@ class UpdatePasswordView(LoginRequiredMixin, FormView):
         
         logout(self.request)
         return super(UpdatePasswordView, self).form_valid(form)
+
+class CodeVerification(FormView):
+    template_name = 'users/verification.html'
+    form_class = VerificationForm
+    success_url = reverse_lazy('home_app:user-login')
+
+    def get_form_kwargs(self):
+        kwargs = super(CodeVerification, self).get_form_kwargs()
+        kwargs.update({
+            'pk':self.kwargs['pk'],
+        })
+        return kwargs
+
+    def form_valid(self, form):
+        User.objects.filter(
+            id=self.kwargs['pk']
+        ).update(
+            is_active=True
+        )
+        return super(CodeVerification, self).form_valid(form)
