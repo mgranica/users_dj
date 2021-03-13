@@ -56,3 +56,23 @@ class LoginForm(forms.Form):
             raise forms.ValidationError('the user data is not correct')
 
         return self.cleaned_data
+
+class UpdatePasswordForm(forms.Form):
+    password1 = forms.CharField(
+        label="Contraseña",
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Contraseña actual"
+                }
+            )
+    )
+    password2 = forms.CharField(
+        label="Contraseña",
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Contraseña nueva"
+                }
+            )
+    )

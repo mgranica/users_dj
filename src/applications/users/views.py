@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import (
     CreateView,
     View
@@ -12,7 +13,11 @@ from django.views.generic.edit import (
 )
 
 
-from .forms import UserRegisterForm, LoginForm
+from .forms import (
+    UserRegisterForm, 
+    LoginForm, 
+    UpdatePasswordForm
+)
 from .models import User
 
 # Create your views here.
@@ -54,3 +59,24 @@ class LogoutView(View):
                 'users_app:user-login'
             )
         )
+
+class UpdatePasswordView(LoginRequiredMixin, FormView):
+    template_name = 'users/login.html'
+    form_class = UpdatePasswordForm
+    success_url = reverse_lazy('user_app:user-login')
+    login_url = reverse_lazy('user_app:user-login')
+
+    def form_valid(self, form):
+
+        user = self.request.user
+        user = authenticate(
+            username=user.username,
+            password=form.cleaned_data['password1']
+        )
+        if user:
+            new_password = form.cleaned_data['password2']
+            user.set_password(new_password)
+            user.save()
+        
+        logout(self.request)
+        return super(UpdatePasswordView, self).form_valid(form)
