@@ -1,44 +1,58 @@
 from django import forms
+from django.contrib.auth import authenticate
 
 from .models import User
+
 
 class UserRegisterForm(forms.ModelForm):
     """Form definition for UserRegister."""
 
     password1 = forms.CharField(
-        label='Contraseña',
+        label="Contraseña",
         required=True,
-        widget=forms.PasswordInput(
-            attrs={
-                'placeholder': 'Contraseña'
-            }
-        )
+        widget=forms.PasswordInput(attrs={"placeholder": "Contraseña"}),
     )
 
     password2 = forms.CharField(
-        label='Contraseña',
+        label="Contraseña",
         required=True,
-        widget=forms.PasswordInput(
-            attrs={
-                'placeholder': 'Repetir Contraseña'
-            }
-        )
+        widget=forms.PasswordInput(attrs={"placeholder": "Repetir Contraseña"}),
     )
-    
+
     class Meta:
         """Meta definition for UserRegisterform."""
 
         model = User
-        fields = (
-            'username',
-            'email',
-            'name',
-            'last_names',
-            'gender'
-        )
+        fields = ("username", "email", "name", "last_names", "gender")
 
     def clean_password2(self):
-        if self.cleaned_data['password1'] != self.cleaned_data['password2']:
-            self.add_error('password2', 'the password do not match')
-        elif len(self.cleaned_data['password1']) < 5:
-            self.add_error('password2', 'the password needs to have more than 5 characters')
+        if self.cleaned_data["password1"] != self.cleaned_data["password2"]:
+            self.add_error("password2", "the password do not match")
+        elif len(self.cleaned_data["password1"]) < 5:
+            self.add_error(
+                "password2", "the password needs to have more than 5 characters"
+            )
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(
+        label="Contraseña",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "username"}),
+    )
+
+    password1 = forms.CharField(
+        label="Contraseña",
+        required=True,
+        widget=forms.PasswordInput(attrs={"placeholder": "Contraseña"}),
+    )
+
+    def clean(self):
+        cleaned_data = super(LoginForm, self).clean()
+        username = self.cleaned_data['username']
+        password = self.cleaned_data['password1']
+
+        if not authenticate(username=username, password=password):
+            raise forms.ValidationError('the user data is not correct')
+
+        return self.cleaned_data

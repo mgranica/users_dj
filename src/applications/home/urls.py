@@ -9,4 +9,9 @@ urlpatterns = [
         views.HomePage.as_view(),
         name='panel',
     ),
+    path(
+        'mixin/', 
+        views.TestMixin.as_view(),
+        name='mixin',
+    ),
 ]
